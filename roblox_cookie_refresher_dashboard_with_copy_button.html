@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusCore // Roblox Cookie Refresher</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#05050a',
+                            panel: '#0c0d19',
+                            border: '#1e203c',
+                            cyan: '#00f0ff',
+                            purple: '#7000ff',
+                            pink: '#ff007f',
+                            green: '#00ff66'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Courier New', 'Courier', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.5); }
+        }
+        .neon-box {
+            animation: pulseGlow 4s infinite ease-in-out;
+        }
+        .scanlines {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.03),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.03)
+            );
+            background-size: 100% 4px, 6px 100%;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0d19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e203c;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7000ff;
+        }
+    </style>
+</head>
+<body class="bg-cyber-bg text-gray-100 font-sans min-h-screen selection:bg-cyber-cyan selection:text-black antialiased relative overflow-x-hidden">
+
+    <!-- Ambient background glow elements -->
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-cyber-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 right-1/4 w-96 h-96 bg-cyber-cyan/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        
+        <!-- Quick Copy Code Bar -->
+        <div class="bg-cyber-panel/90 border border-cyber-cyan/30 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-xl backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <i data-lucide="code" class="w-5 h-5 text-cyber-cyan"></i>
+                <span class="text-sm font-medium text-gray-200">Want the full HTML code file in your clipboard?</span>
+            </div>
+            <button onclick="copyFullHtmlCode()" class="flex items-center gap-2 bg-cyber-cyan/10 hover:bg-cyber-cyan/20 border border-cyber-cyan/40 text-cyber-cyan px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-lg shadow-cyber-cyan/10">
+                <i data-lucide="copy" class="w-4 h-4"></i> Copy Complete Code
+            </button>
+        </div>
+
+        <!-- 1. Top Header -->
+        <header class="flex flex-col md:flex-row items-center justify-between bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-6 mb-8 shadow-xl">
+            <div class="flex items-center gap-4 mb-4 md:mb-0">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyber-purple to-cyber-cyan flex items-center justify-center shadow-lg shadow-cyber-cyan/20">
+                    <i data-lucide="shield-alert" class="w-6 h-6 text-black"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wider bg-gradient-to-r from-cyber-cyan via-white to-cyber-purple bg-clip-text text-transparent">
+                        NEXUSCORE <span class="text-xs font-mono px-2 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">v4.8.2</span>
+                    </h1>
+                    <p class="text-xs text-gray-400 mt-0.5">Advanced Roblox Session & Cookie Rotation Engine</p>
+                </div>
+            </div>
+
+            <!-- Live System Stats & Status -->
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center gap-2.5 bg-cyber-bg/70 px-4 py-2 rounded-xl border border-cyber-border">
+                    <span class="relative flex h-3 w-3">
+                      <span id="status-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+                      <span id="status-dot" class="relative inline-flex rounded-full h-3 w-3 bg-cyber-green"></span>
+                    </span>
+                    <span id="status-text" class="text-xs font-semibold tracking-wide uppercase text-cyber-green">System Online</span>
+                </div>
+                
+                <div class="flex items-center gap-3 bg-cyber-bg/70 px-4 py-2 rounded-xl border border-cyber-border text-xs">
+                    <div class="flex items-center gap-1.5 text-gray-400">
+                        <i data-lucide="cpu" class="w-4 h-4 text-cyber-cyan"></i>
+                        <span>Load: <strong class="text-gray-200">0.4%</strong></span>
+                    </div>
+                    <div class="h-4 w-px bg-cyber-border"></div>
+                    <div class="flex items-center gap-1.5 text-gray-400">
+                        <i data-lucide="activity" class="w-4 h-4 text-cyber-purple"></i>
+                        <span>Latency: <strong class="text-gray-200">24ms</strong></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left & Middle Columns (Controls, Inputs, Stats) -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- 2. Cookie Input Section -->
+                <section class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-6 shadow-xl relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="key" class="w-5 h-5 text-cyber-cyan"></i>
+                            <h2 class="font-bold text-lg tracking-wide">Target .ROBLOSECURITY Cookie</h2>
+                        </div>
+                        <span class="text-xs text-gray-400 font-mono">Encrypted Local Buffer</span>
+                    </div>
+
+                    <div class="relative">
+                        <textarea id="cookie-input" rows="3" placeholder="_|WARNING:-DO-NOT-SHARE-THIS.-Sharing-this-will-allow-someone-to-log-in-as-you..." class="w-full bg-cyber-bg/90 border border-cyber-border rounded-xl p-4 text-sm font-mono text-gray-300 focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan transition-all resize-none"></textarea>
+                        
+                        <!-- Input Control Action Icons -->
+                        <div class="absolute right-3 bottom-4 flex items-center gap-2">
+                            <button onclick="toggleCookieVisibility()" id="visibility-btn" title="Toggle Visibility" class="p-2 rounded-lg bg-cyber-border/50 hover:bg-cyber-border text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="clearCookieInput()" title="Clear Cookie" class="p-2 rounded-lg bg-cyber-border/50 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-3">
+                        <div class="flex items-center gap-2 text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+                            <span>Never share your token string. All rotations happen securely client/server-side.</span>
+                        </div>
+                        <button onclick="pasteFromClipboard()" class="text-xs text-cyber-cyan hover:underline flex items-center gap-1 font-medium">
+                            <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i> Paste from Clipboard
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 3. Control Panel -->
+                <section class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-6 shadow-xl">
+                    <div class="flex items-center gap-2 mb-6">
+                        <i data-lucide="sliders" class="w-5 h-5 text-cyber-purple"></i>
+                        <h2 class="font-bold text-lg tracking-wide">Operation Control Panel</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Start Auto-Refresh Button -->
+                        <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="group relative overflow-hidden rounded-xl p-4 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 border border-cyber-purple/40 hover:border-cyber-cyan transition-all duration-300 text-left flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between w-full mb-3">
+                                <span class="p-2 rounded-lg bg-cyber-purple/20 text-cyber-purple group-hover:text-cyber-cyan transition-colors">
+                                    <i data-lucide="refresh-cw" id="auto-refresh-icon" class="w-5 h-5"></i>
+                                </span>
+                                <span id="auto-badge" class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyber-border text-gray-400">Idle</span>
+                            </div>
+                            <div>
+                                <h3 id="auto-btn-title" class="font-bold text-sm text-white">Start Auto-Refresh</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">Automated 24h cron loop</p>
+                            </div>
+                        </button>
+
+                        <!-- Manual Test Refresh Button -->
+                        <button onclick="triggerManualRefresh()" class="group relative overflow-hidden rounded-xl p-4 bg-cyber-bg border border-cyber-border hover:border-cyber-cyan transition-all duration-300 text-left flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between w-full mb-3">
+                                <span class="p-2 rounded-lg bg-cyber-cyan/10 text-cyber-cyan group-hover:scale-110 transition-transform">
+                                    <i data-lucide="zap" class="w-5 h-5"></i>
+                                </span>
+                                <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20">Instant</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-white">Manual Test Refresh</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">Execute immediate ticket swap</p>
+                            </div>
+                        </button>
+
+                        <!-- Export Config Button -->
+                        <button onclick="exportConfig()" class="group relative overflow-hidden rounded-xl p-4 bg-cyber-bg border border-cyber-border hover:border-cyber-pink transition-all duration-300 text-left flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between w-full mb-3">
+                                <span class="p-2 rounded-lg bg-cyber-pink/10 text-cyber-pink group-hover:scale-110 transition-transform">
+                                    <i data-lucide="download" class="w-5 h-5"></i>
+                                </span>
+                                <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyber-pink/10 text-cyber-pink border border-cyber-pink/20">JSON</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-white">Export Config</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">Download config.json bundle</p>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 5. Session Stats Cards -->
+                <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Session Status Card -->
+                    <div class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-gray-400 mb-3">
+                            <span class="text-xs uppercase font-mono tracking-wider">Session Health</span>
+                            <i data-lucide="shield-check" class="w-4 h-4 text-cyber-green"></i>
+                        </div>
+                        <div>
+                            <div id="session-status-label" class="text-xl font-black text-cyber-green tracking-tight">ACTIVE // SECURE</div>
+                            <p class="text-xs text-gray-400 mt-1">Authentication pipeline verified</p>
+                        </div>
+                    </div>
+
+                    <!-- Last Refreshed Card -->
+                    <div class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-gray-400 mb-3">
+                            <span class="text-xs uppercase font-mono tracking-wider">Last Rotation</span>
+                            <i data-lucide="clock" class="w-4 h-4 text-cyber-cyan"></i>
+                        </div>
+                        <div>
+                            <div id="last-refreshed-time" class="text-xl font-bold font-mono text-white">Just now</div>
+                            <p class="text-xs text-gray-400 mt-1">Automatic sync complete</p>
+                        </div>
+                    </div>
+
+                    <!-- Expiration Countdown Card -->
+                    <div class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-gray-400 mb-3">
+                            <span class="text-xs uppercase font-mono tracking-wider">TTL Countdown</span>
+                            <i data-lucide="hourglass" class="w-4 h-4 text-cyber-pink"></i>
+                        </div>
+                        <div>
+                            <div id="countdown-timer" class="text-xl font-bold font-mono text-cyber-pink">23h 59m 42s</div>
+                            <p class="text-xs text-gray-400 mt-1">Next scheduled refresh</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Right Column (4. Live Terminal / Console Log Box) -->
+            <div class="lg:col-span-1 flex flex-col">
+                <div class="bg-cyber-panel/80 backdrop-blur-md border border-cyber-border rounded-2xl p-6 shadow-xl flex flex-col h-full min-h-[500px]">
+                    <div class="flex items-center justify-between pb-4 border-b border-cyber-border mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="terminal" class="w-5 h-5 text-cyber-cyan"></i>
+                            <h2 class="font-bold text-sm tracking-wide font-mono uppercase">System Console</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="clearConsoleLogs()" title="Clear Logs" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded bg-cyber-bg border border-cyber-border transition-colors">Clear</button>
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyber-cyan animate-pulse"></span>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Screen -->
+                    <div id="terminal-screen" class="scanlines bg-cyber-bg/90 border border-cyber-border rounded-xl p-4 flex-1 font-mono text-xs overflow-y-auto space-y-2 max-h-[550px] shadow-inner">
+                        <div class="text-gray-500">[00:00:01] System initialized successfully.</div>
+                        <div class="text-gray-500">[00:00:01] Loaded security modules & environment wrappers.</div>
+                        <div class="text-cyber-cyan">[00:00:02] Ready for incoming .ROBLOSECURITY token ingestion...</div>
+                    </div>
+
+                    <!-- Terminal Footer Indicator -->
+                    <div class="mt-4 pt-3 border-t border-cyber-border/50 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span>Buffer: Secure Storage</span>
+                        <span class="text-cyber-green">Listening for triggers...</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        let isAutoRefreshActive = false;
+        let autoRefreshInterval = null;
+        let isCookieHidden = false;
+
+        // Copy Full HTML Code Functionality
+        async function copyFullHtmlCode() {
+            try {
+                const htmlContent = document.documentElement.outerHTML;
+                await navigator.clipboard.writeText(htmlContent);
+                showToast('Complete HTML code copied to clipboard!', 'success');
+            } catch (err) {
+                showToast('Failed to copy code automatically.', 'error');
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let borderColor = 'border-cyber-cyan/40';
+            let iconColor = 'text-cyber-cyan';
+            let iconName = 'info';
+
+            if (type === 'success') {
+                borderColor = 'border-cyber-green/40';
+                iconColor = 'text-cyber-green';
+                iconName = 'check-circle';
+            } else if (type === 'error') {
+                borderColor = 'border-red-500/40';
+                iconColor = 'text-red-400';
+                iconName = 'alert-octagon';
+            }
+
+            toast.className = `flex items-center gap-3 bg-cyber-panel/95 backdrop-blur-md border ${borderColor} px-4 py-3 rounded-xl shadow-2xl text-sm text-gray-200 transform translate-y-2 opacity-0 transition-all duration-300`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 ${iconColor} flex-shrink-0"></i>
+                <div class="flex-1">${message}</div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Terminal Log Appender
+        function logToTerminal(message, type = 'info') {
+            const terminal = document.getElementById('terminal-screen');
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            const div = document.createElement('div');
+
+            let colorClass = 'text-gray-300';
+            if (type === 'success') colorClass = 'text-cyber-green font-semibold';
+            if (type === 'error') colorClass = 'text-red-400 font-semibold';
+            if (type === 'warning') colorClass = 'text-amber-400';
+            if (type === 'cyan') colorClass = 'text-cyber-cyan';
+
+            div.className = `${colorClass}`;
+            div.textContent = `[${timestamp}] ${message}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Cookie Visibility Toggle
+        function toggleCookieVisibility() {
+            const input = document.getElementById('cookie-input');
+            const btn = document.getElementById('visibility-btn');
+            isCookieHidden = !isCookieHidden;
+            
+            if (isCookieHidden) {
+                input.style.webkitTextSecurity = 'disc';
+                btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i>`;
+                showToast('Token string masked for privacy.', 'info');
+            } else {
+                input.style.webkitTextSecurity = 'none';
+                btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
+                showToast('Token string unmasked.', 'info');
+            }
+            lucide.createIcons();
+        }
+
+        // Clear Cookie Input
+        function clearCookieInput() {
+            document.getElementById('cookie-input').value = '';
+            showToast('Cookie buffer cleared.', 'info');
+            logToTerminal('User wiped target cookie from memory buffer.', 'warning');
+        }
+
+        // Paste from Clipboard
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text.includes('_|WARNING')) {
+                    document.getElementById('cookie-input').value = text;
+                    showToast('Valid .ROBLOSECURITY token pasted successfully!', 'success');
+                    logToTerminal('Successfully ingested cookie from clipboard.', 'success');
+                } else if (text) {
+                    document.getElementById('cookie-input').value = text;
+                    showToast('Pasted text does not match standard Roblox warning format.', 'warning');
+                    logToTerminal('Pasted generic string into buffer.', 'warning');
+                } else {
+                    showToast('Clipboard is empty.', 'error');
+                }
+            } catch (err) {
+                showToast('Clipboard permission denied or unavailable.', 'error');
+                logToTerminal('Failed to read clipboard due to browser restrictions.', 'error');
+            }
+        }
+
+        // Clear Console Logs
+        function clearConsoleLogs() {
+            const terminal = document.getElementById('terminal-screen');
+            terminal.innerHTML = `<div class="text-gray-500">[${new Date().toTimeString().split(' ')[0]}] Console buffer wiped by user.</div>`;
+            showToast('Console logs cleared.', 'info');
+        }
+
+        // Toggle Auto-Refresh Cron Loop Simulation
+        function toggleAutoRefresh() {
+            isAutoRefreshActive = !isAutoRefreshActive;
+            const btnTitle = document.getElementById('auto-btn-title');
+            const badge = document.getElementById('auto-badge');
+            const icon = document.getElementById('auto-refresh-icon');
+
+            if (isAutoRefreshActive) {
+                btnTitle.textContent = 'Stop Auto-Refresh';
+                badge.textContent = 'Active';
+                badge.className = 'text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyber-green/10 text-cyber-green border border-cyber-green/30';
+                icon.classList.add('animate-spin');
+                
+                showToast('Automated 24-hour rotation cycle activated.', 'success');
+                logToTerminal('Cron daemon started successfully. Scheduled interval: 24h.', 'cyan');
+            } else {
+                btnTitle.textContent = 'Start Auto-Refresh';
+                badge.textContent = 'Idle';
+                badge.className = 'text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyber-border text-gray-400';
+                icon.classList.remove('animate-spin');
+
+                showToast('Automated cycle halted.', 'info');
+                logToTerminal('Cron daemon stopped by user intervention.', 'warning');
+            }
+        }
+
+        // Manual Test Refresh Simulation
+        function triggerManualRefresh() {
+            const cookieVal = document.getElementById('cookie-input').value.trim();
+            if (!cookieVal || !cookieVal.includes('_|WARNING')) {
+                showToast('Please insert a valid .ROBLOSECURITY cookie first!', 'error');
+                logToTerminal('Refresh aborted: Invalid or missing cookie payload.', 'error');
+                return;
+            }
+
+            showToast('Initiating Roblox authentication ticket exchange...', 'info');
+            logToTerminal('Starting manual refresh sequence...', 'cyan');
+
+            setTimeout(() => {
+                logToTerminal('POST https://auth.roblox.com/v2/logout -> Requesting CSRF Token...', 'info');
+            }, 600);
+
+            setTimeout(() => {
+                logToTerminal('Successfully harvested x-csrf-token from response headers.', 'success');
+            }, 1400);
+
+            setTimeout(() => {
+                logToTerminal('POST https://auth.roblox.com/v1/authentication-ticket -> Requesting auth ticket...', 'info');
+            }, 2200);
+
+            setTimeout(() => {
+                logToTerminal('Received rbx-authentication-ticket header successfully.', 'success');
+            }, 3000);
+
+            setTimeout(() => {
+                logToTerminal('POST https://auth.roblox.com/v1/authentication-ticket/redeem -> Redeeming new session...', 'info');
+            }, 3800);
+
+            setTimeout(() => {
+                const mockNewCookie = '_|WARNING:-DO-NOT-SHARE-THIS.-Refreshed_' + Math.random().toString(36).substring(2, 15) + '_NexusCore';
+                document.getElementById('cookie-input').value = mockNewCookie;
+                document.getElementById('last-refreshed-time').textContent = new Date().toTimeString().split(' ')[0];
+                
+                showToast('SUCCESS: Cookie successfully rotated and saved!', 'success');
+                logToTerminal('[+] SUCCESS: New .ROBLOSECURITY cookie parsed and saved to buffer!', 'success');
+            }, 4600);
+        }
+
+        // Export Config Button Action
+        function exportConfig() {
+            const cookieVal = document.getElementById('cookie-input').value.trim() || "YOUR_ROBLOSECURITY_HERE";
+            const configData = {
+                version: "4.8.2",
+                timestamp: new Date().toISOString(),
+                cookie: cookieVal,
+                settings: {
+                    autoRefreshIntervalHours: 24,
+                    retryOnFailure: true,
+                    notificationsEnabled: true
+                }
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(configData, null, 4));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "config.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast('config.json downloaded successfully!', 'success');
+            logToTerminal('Exported config.json bundle containing current session state.', 'cyan');
+        }
+
+        // Countdown Timer Simulator
+        let totalSeconds = 24 * 3600 - 18;
+        setInterval(() => {
+            totalSeconds--;
+            if (totalSeconds < 0) totalSeconds = 24 * 3600;
+            
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const formatted = `${hours}h ${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+            const countdownEl = document.getElementById('countdown-timer');
+            if (countdownEl) countdownEl.textContent = formatted;
+        }, 1000);
+    </script>
+</body>
+</html>
